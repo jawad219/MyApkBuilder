@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<title>Offline Video</title>
+</head>
+<body>
+<header><h1>Offline Video</h1><p>Download supported direct video URLs and watch offline.</p></header>
+
+<main>
+<section class="card">
+  <input id="url" type="url" placeholder="Paste direct MP4/WebM video URL">
+  <button id="download">Download</button>
+  <div id="status"></div>
+</section>
+
+<section class="card">
+  <div class="row"><h2>My Videos</h2><button id="clear" class="secondary">Clear All</button></div>
+  <div id="videos" class="videos"><p class="muted">No downloaded videos yet.</p></div>
+</section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
