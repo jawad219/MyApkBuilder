@@ -22,30 +22,58 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Android SDK
+      - name: Find Android SDK
+        shell: bash
         run: |
+          echo "Android SDK: $ANDROID_HOME"
+
+          echo "Searching for sdkmanager..."
+
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
+            -type f \
+            -name sdkmanager \
+            -perm -111 \
+            2>/dev/null | head -n 1)
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager was not found."
+            echo "Contents of cmdline-tools:"
+            find "$ANDROID_HOME/cmdline-tools" -maxdepth 4 -type f 2>/dev/null || true
+            exit 1
+          fi
+
+          SDKMANAGER_DIR=$(dirname "$SDKMANAGER")
+
+          echo "Found sdkmanager:"
+          echo "$SDKMANAGER"
+
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "$SDKMANAGER_DIR" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+      - name: Check Android SDK
+        shell: bash
+        run: |
+          echo "Using:"
+          echo "$SDKMANAGER"
 
-          ls -la "$ANDROID_HOME"
-          ls -la "$ANDROID_HOME/cmdline-tools/latest/bin"
-
-          sdkmanager --version
+          "$SDKMANAGER" --version
 
       - name: Accept Android SDK licenses
+        shell: bash
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
+          yes | "$SDKMANAGER" --licenses || true
 
       - name: Install Android SDK packages
+        shell: bash
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Create Android project
+        shell: bash
         run: |
           mkdir -p android-app/app/src/main/java/com/example/mywebapp
           mkdir -p android-app/app/src/main/res/values
@@ -192,6 +220,7 @@ jobs:
           gradle-version: "8.11.1"
 
       - name: Build APK
+        shell: bash
         run: |
           cd android-app
           gradle assembleDebug --no-daemon
