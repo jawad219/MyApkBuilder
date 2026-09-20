@@ -13,55 +13,45 @@
 
     <div class="header">
         <h1>My APK Builder</h1>
-        <p>HTML / CSS / JS → Android APK</p>
+        <p>Real ZIP → Android APK</p>
     </div>
 
     <div class="card">
 
+        <label>GitHub Username</label>
+        <input id="githubUser" type="text" placeholder="yourusername">
+
+        <label>Repository Name</label>
+        <input id="githubRepo" type="text" placeholder="MyAPKBuilder">
+
+        <label>GitHub Token</label>
+        <input id="githubToken" type="password" placeholder="github_pat_...">
+
+        <div class="note">
+            Token sirf tumhare GitHub account ke liye use hoga.
+        </div>
+
         <label>App Name</label>
-        <input
-            type="text"
-            id="appName"
-            value="My Web App"
-            placeholder="My App"
-        >
+        <input id="appName" type="text" value="My Web App">
 
         <label>Package Name</label>
-        <input
-            type="text"
-            id="packageName"
-            value="com.example.mywebapp"
-            placeholder="com.example.myapp"
-        >
+        <input id="packageName" type="text" value="com.example.mywebapp">
 
         <label>Version Name</label>
-        <input
-            type="text"
-            id="versionName"
-            value="1.0"
-            placeholder="1.0"
-        >
+        <input id="versionName" type="text" value="1.0">
 
         <label>Website ZIP</label>
 
         <div class="upload">
-            <input
-                type="file"
-                id="zipFile"
-                accept=".zip"
-            >
+            <input id="zipFile" type="file" accept=".zip">
             <span id="fileName">Choose ZIP file</span>
         </div>
 
         <label>App Icon</label>
 
         <div class="upload">
-            <input
-                type="file"
-                id="iconFile"
-                accept="image/png,image/jpeg"
-            >
-            <span id="iconName">Choose icon</span>
+            <input id="iconFile" type="file" accept="image/png,image/jpeg">
+            <span id="iconName">Choose PNG/JPG icon</span>
         </div>
 
         <button id="buildBtn">
@@ -69,7 +59,7 @@
         </button>
 
         <div id="status">
-            APK builder ready.
+            Ready.
         </div>
 
     </div>
