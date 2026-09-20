@@ -1,73 +1,114 @@
-const zipFile = document.getElementById("zipFile");
-const iconFile = document.getElementById("iconFile");
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-const fileName = document.getElementById("fileName");
-const iconName = document.getElementById("iconName");
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f3f6;
+    min-height: 100vh;
+}
 
-const buildBtn = document.getElementById("buildBtn");
-const status = document.getElementById("status");
+.container {
+    width: 100%;
+    max-width: 650px;
+    margin: auto;
+    padding: 25px 15px;
+}
 
-zipFile.addEventListener("change", () => {
+.header {
+    text-align: center;
+    margin-bottom: 25px;
+}
 
-    if (zipFile.files.length > 0) {
-        fileName.textContent = zipFile.files[0].name;
-    } else {
-        fileName.textContent = "Choose ZIP file";
-    }
+.header h1 {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
 
-});
+.header p {
+    color: #666;
+}
 
-iconFile.addEventListener("change", () => {
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+}
 
-    if (iconFile.files.length > 0) {
-        iconName.textContent = iconFile.files[0].name;
-    } else {
-        iconName.textContent = "Choose icon";
-    }
+label {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 7px;
+    font-weight: bold;
+}
 
-});
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+}
 
-buildBtn.addEventListener("click", () => {
+input:focus {
+    border-color: #111;
+}
 
-    const appName =
-        document.getElementById("appName").value.trim();
+.upload {
+    position: relative;
+    border: 2px dashed #aaa;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    overflow: hidden;
+}
 
-    const packageName =
-        document.getElementById("packageName").value.trim();
+.upload input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
 
-    const versionName =
-        document.getElementById("versionName").value.trim();
+.upload span {
+    color: #666;
+}
 
-    if (!appName) {
-        status.textContent = "❌ App Name required.";
-        return;
-    }
+button {
+    width: 100%;
+    margin-top: 25px;
+    padding: 15px;
+    border: none;
+    border-radius: 9px;
+    background: #111;
+    color: white;
+    font-size: 17px;
+    font-weight: bold;
+}
 
-    if (!packageName) {
-        status.textContent = "❌ Package Name required.";
-        return;
-    }
+button:disabled {
+    opacity: 0.5;
+}
 
-    if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(packageName)) {
-        status.textContent =
-            "❌ Invalid package name. Example: com.example.myapp";
-        return;
-    }
+.note {
+    margin-top: 8px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #555;
+}
 
-    if (!versionName) {
-        status.textContent = "❌ Version required.";
-        return;
-    }
-
-    status.textContent =
-        "✅ Settings ready. GitHub Actions will build the APK.";
-
-    console.log({
-        appName: appName,
-        packageName: packageName,
-        versionName: versionName,
-        zip: zipFile.files[0] || null,
-        icon: iconFile.files[0] || null
-    });
-
-});
+#status {
+    margin-top: 18px;
+    text-align: center;
+    font-weight: bold;
+    line-height: 1.5;
+    white-space: pre-line;
+}
