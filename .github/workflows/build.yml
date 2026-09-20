@@ -7,6 +7,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
 
       - name: Checkout repository
@@ -19,11 +23,21 @@ jobs:
           java-version: "17"
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+
+          ls -la "$ANDROID_HOME"
+          ls -la "$ANDROID_HOME/cmdline-tools/latest/bin"
+
+          sdkmanager --version
 
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses || true
+          yes | sdkmanager --licenses > /dev/null || true
 
       - name: Install Android SDK packages
         run: |
@@ -116,7 +130,6 @@ jobs:
 
           cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
           <resources>
-
               <style
                   name="AppTheme"
                   parent="android:style/Theme.Material.Light.NoActionBar">
@@ -127,7 +140,6 @@ jobs:
                   <item name="android:statusBarColor">#FFFFFF</item>
 
               </style>
-
           </resources>
           EOF
 
