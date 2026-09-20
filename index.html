@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My APK Builder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>My APK Builder</h1>
+        <p>HTML / CSS / JS → Android APK</p>
+    </div>
+
+    <div class="card">
+
+        <label>App Name</label>
+        <input
+            type="text"
+            id="appName"
+            value="My Web App"
+            placeholder="My App"
+        >
+
+        <label>Package Name</label>
+        <input
+            type="text"
+            id="packageName"
+            value="com.example.mywebapp"
+            placeholder="com.example.myapp"
+        >
+
+        <label>Version Name</label>
+        <input
+            type="text"
+            id="versionName"
+            value="1.0"
+            placeholder="1.0"
+        >
+
+        <label>Website ZIP</label>
+
+        <div class="upload">
+            <input
+                type="file"
+                id="zipFile"
+                accept=".zip"
+            >
+            <span id="fileName">Choose ZIP file</span>
+        </div>
+
+        <label>App Icon</label>
+
+        <div class="upload">
+            <input
+                type="file"
+                id="iconFile"
+                accept="image/png,image/jpeg"
+            >
+            <span id="iconName">Choose icon</span>
+        </div>
+
+        <button id="buildBtn">
+            Build APK
+        </button>
+
+        <div id="status">
+            APK builder ready.
+        </div>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
