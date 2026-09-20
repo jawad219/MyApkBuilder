@@ -61,8 +61,7 @@ jobs:
           include(":app")
           EOF
 
-          cat > android-app/
-build.gradle <<'EOF'
+          cat > android-app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.9.1' apply false
           }
@@ -119,8 +118,7 @@ build.gradle <<'EOF'
           cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
           <resources>
 
-              <style
-        name="AppTheme"
+              <style name="AppTheme"
                   parent="android:style/Theme.Material.Light.NoActionBar">
 
                   <item name="android:fontFamily">sans</item>
