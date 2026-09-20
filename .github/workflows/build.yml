@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Custom APK
 
 on:
   workflow_dispatch:
@@ -25,10 +25,6 @@ jobs:
       - name: Find Android SDK
         shell: bash
         run: |
-          echo "Android SDK: $ANDROID_HOME"
-
-          echo "Searching for sdkmanager..."
-
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
             -type f \
             -name sdkmanager \
@@ -36,52 +32,96 @@ jobs:
             2>/dev/null | head -n 1)
 
           if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager was not found."
-            echo "Contents of cmdline-tools:"
-            find "$ANDROID_HOME/cmdline-tools" -maxdepth 4 -type f 2>/dev/null || true
+            echo "sdkmanager not found"
             exit 1
           fi
 
-          SDKMANAGER_DIR=$(dirname "$SDKMANAGER")
-
-          echo "Found sdkmanager:"
-          echo "$SDKMANAGER"
-
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          echo "$SDKMANAGER_DIR" >> "$GITHUB_PATH"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
 
-      - name: Check Android SDK
-        shell: bash
-        run: |
-          echo "Using:"
-          echo "$SDKMANAGER"
-
-          "$SDKMANAGER" --version
-
-      - name: Accept Android SDK licenses
-        shell: bash
+      - name: Accept Android licenses
         run: |
           yes | "$SDKMANAGER" --licenses || true
 
-      - name: Install Android SDK packages
-        shell: bash
+      - name: Install Android SDK
         run: |
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
+      - name: Read build configuration
+        shell: bash
+        run: |
+          if [ ! -f builder-input/config.json ]; then
+            echo "config.json not found"
+            exit 1
+          fi
+
+          if [ ! -f builder-input/app.zip ]; then
+            echo "app.zip not found"
+            exit 1
+          fi
+
+          if [ ! -f builder-input/app_icon.png ]; then
+            echo "app_icon.png not found"
+            exit 1
+          fi
+
+          APP_NAME=$(python3 -c "import json; print(json.load(open('builder-input/config.json'))['appName'])")
+          PACKAGE_NAME=$(python3 -c "import json; print(json.load(open('builder-input/config.json'))['packageName'])")
+          VERSION_NAME=$(python3 -c "import json; print(json.load(open('builder-input/config.json'))['versionName'])")
+
+          echo "APP_NAME=$APP_NAME" >> "$GITHUB_ENV"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+
+          echo "App: $APP_NAME"
+          echo "Package: $PACKAGE_NAME"
+          echo "Version: $VERSION_NAME"
+
+      - name: Extract website ZIP
+        shell: bash
+        run: |
+          mkdir -p website
+
+          unzip -o builder-input/app.zip -d website
+
+          echo "ZIP contents:"
+          find website -maxdepth 4 -type f
+
+          INDEX=$(find website -type f -name "index.html" | head -n 1)
+
+          if [ -z "$INDEX" ]; then
+            echo "index.html not found inside ZIP"
+            exit 1
+          fi
+
+          WEBSITE_ROOT=$(dirname "$INDEX")
+
+          echo "Website root: $WEBSITE_ROOT"
+
+          mkdir -p android-app/app/src/main/assets
+
+          cp -R "$WEBSITE_ROOT"/. android-app/app/src/main/assets/
+
       - name: Create Android project
         shell: bash
         run: |
-          mkdir -p android-app/app/src/main/java/com/example/mywebapp
-          mkdir -p android-app/app/src/main/res/values
-          mkdir -p android-app/app/src/main/assets
+          PACKAGE_PATH=$(echo "$PACKAGE_NAME" | tr '.' '/')
 
-          cp index.html android-app/app/src/main/assets/
-          cp style.css android-app/app/src/main/assets/
-          cp script.js android-app/app/src/main/assets/
+          mkdir -p "android-app/app/src/main/java/$PACKAGE_PATH"
+          mkdir -p android-app/app/src/main/res/values
+          mkdir -p android-app/app/src/main/res/drawable
+          mkdir -p android-app/app/src/main/res/mipmap-hdpi
+          mkdir -p android-app/app/src/main/res/mipmap-mdpi
+          mkdir -p android-app/app/src/main/res/mipmap-xhdpi
+          mkdir -p android-app/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android-app/app/src/main/res/mipmap-xxxhdpi
+
+          cp builder-input/app_icon.png \
+            android-app/app/src/main/res/drawable/app_icon.png
 
           cat > android-app/settings.gradle <<'EOF'
           pluginManagement {
@@ -100,7 +140,7 @@ jobs:
               }
           }
 
-          rootProject.name = "MyAPKBuilder"
+          rootProject.name = "CustomAPK"
           include(":app")
           EOF
 
@@ -110,33 +150,34 @@ jobs:
           }
           EOF
 
-          cat > android-app/app/build.gradle <<'EOF'
+          cat > android-app/app/build.gradle <<EOF
           plugins {
               id 'com.android.application'
           }
 
           android {
-              namespace 'com.example.mywebapp'
+              namespace '$PACKAGE_NAME'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.example.mywebapp'
+                  applicationId '$PACKAGE_NAME'
                   minSdk 23
                   targetSdk 35
                   versionCode 1
-                  versionName '1.0'
+                  versionName '$VERSION_NAME'
               }
           }
           EOF
 
-          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          cat > android-app/app/src/main/AndroidManifest.xml <<EOF
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
 
               <application
                   android:allowBackup="true"
-                  android:label="My Web App"
+                  android:label="$APP_NAME"
+                  android:icon="@drawable/app_icon"
                   android:supportsRtl="true"
                   android:theme="@style/AppTheme">
 
@@ -171,8 +212,8 @@ jobs:
           </resources>
           EOF
 
-          cat > android-app/app/src/main/java/com/example/mywebapp/MainActivity.java <<'EOF'
-          package com.example.mywebapp;
+          cat > "android-app/app/src/main/java/$PACKAGE_PATH/MainActivity.java" <<EOF
+          package $PACKAGE_NAME;
 
           import android.app.Activity;
           import android.os.Bundle;
@@ -220,7 +261,6 @@ jobs:
           gradle-version: "8.11.1"
 
       - name: Build APK
-        shell: bash
         run: |
           cd android-app
           gradle assembleDebug --no-daemon
@@ -228,5 +268,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MyAPKBuilder-debug-apk
+          name: custom-apk
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
