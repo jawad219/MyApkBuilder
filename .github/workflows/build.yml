@@ -1,1 +1,81 @@
+buildBtn.addEventListener("click", async () => {
 
+    const appName =
+        document.getElementById("appName").value.trim();
+
+    const packageName =
+        document.getElementById("packageName").value.trim();
+
+    const versionName =
+        document.getElementById("versionName").value.trim();
+
+    if (!appName) {
+        status.textContent = "Please enter App Name.";
+        return;
+    }
+
+    if (!packageName) {
+        status.textContent = "Please enter Package Name.";
+        return;
+    }
+
+    if (!zipFile.files.length) {
+        status.textContent = "Please upload ZIP file.";
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("appName", appName);
+    formData.append("packageName", packageName);
+    formData.append("versionName", versionName);
+
+    formData.append(
+        "zipFile",
+        zipFile.files[0]
+    );
+
+    if (iconFile.files.length) {
+
+        formData.append(
+            "iconFile",
+            iconFile.files[0]
+        );
+
+    }
+
+    status.textContent = "Uploading files...";
+
+    try {
+
+        const response = await fetch("/build", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+
+            status.textContent =
+                "Files received successfully!";
+
+            console.log(result);
+
+        } else {
+
+            status.textContent =
+                "Error: " + result.message;
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Could not connect to builder server.";
+
+    }
+
+});
