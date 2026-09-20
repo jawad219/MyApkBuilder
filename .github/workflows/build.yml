@@ -1,81 +1,197 @@
-buildBtn.addEventListener("click", async () => {
+name: Build Android APK
 
-    const appName =
-        document.getElementById("appName").value.trim();
+on:
+  workflow_dispatch:
 
-    const packageName =
-        document.getElementById("packageName").value.trim();
+jobs:
 
-    const versionName =
-        document.getElementById("versionName").value.trim();
+  build:
 
-    if (!appName) {
-        status.textContent = "Please enter App Name.";
-        return;
-    }
+    runs-on: ubuntu-latest
 
-    if (!packageName) {
-        status.textContent = "Please enter Package Name.";
-        return;
-    }
+    steps:
 
-    if (!zipFile.files.length) {
-        status.textContent = "Please upload ZIP file.";
-        return;
-    }
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    const formData = new FormData();
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-    formData.append("appName", appName);
-    formData.append("packageName", packageName);
-    formData.append("versionName", versionName);
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-    formData.append(
-        "zipFile",
-        zipFile.files[0]
-    );
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
 
-    if (iconFile.files.length) {
+      - name: Create Android project
+        run: |
 
-        formData.append(
-            "iconFile",
-            iconFile.files[0]
-        );
+          mkdir -p android-app/app/src/main/java/com/example/mywebapp
+          mkdir -p android-app/app/src/main/res/layout
+          mkdir -p android-app/app/src/main/assets
 
-    }
+          cp index.html android-app/app/src/main/assets/
+          cp style.css android-app/app/src/main/assets/
+          cp script.js android-app/app/src/main/assets/
 
-    status.textContent = "Uploading files...";
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
 
-    try {
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
 
-        const response = await fetch("/build", {
-            method: "POST",
-            body: formData
-        });
+          rootProject.name = "MyAPKBuilder"
+          include(":app")
+          EOF
 
-        const result = await response.json();
+          cat > android-app/
+build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.9.1' apply false
+          }
+          EOF
 
-        if (result.success) {
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
 
-            status.textContent =
-                "Files received successfully!";
+          android {
+              namespace 'com.example.mywebapp'
+              compileSdk 35
 
-            console.log(result);
+              defaultConfig {
+                  applicationId 'com.example.mywebapp'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
 
-        } else {
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-            status.textContent =
-                "Error: " + result.message;
+              <uses-permission android:name="android.permission.INTERNET" />
 
-        }
+              <application
+                  android:allowBackup="true"
+                  android:label="My Web App"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
 
-    } catch (error) {
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
 
-        console.error(error);
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
 
-        status.textContent =
-            "Could not connect to builder server.";
+                  </activity>
 
-    }
+              </application>
 
-});
+          </manifest>
+          EOF
+
+          mkdir -p android-app/app/src/main/res/values
+
+          cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+
+              <style
+        name="AppTheme"
+                  parent="android:style/Theme.Material.Light.NoActionBar">
+
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#000000</item>
+                  <item name="android:windowLightStatusBar">true</item>
+                  <item name="android:statusBarColor">#FFFFFF</item>
+
+              </style>
+
+          </resources>
+          EOF
+
+          cat > android-app/app/src/main/java/com/example/mywebapp/MainActivity.java <<'EOF'
+          package com.example.mywebapp;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+
+              private WebView webView;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+
+                  super.onCreate(savedInstanceState);
+
+                  webView = new WebView(this);
+
+                  WebSettings settings = webView.getSettings();
+
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
+
+                  webView.setWebViewClient(new WebViewClient());
+
+                  webView.loadUrl("file:///android_asset/index.html");
+
+                  setContentView(webView);
+              }
+
+              @Override
+              public void onBackPressed() {
+
+                  if (webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+          }
+          EOF
+
+      - name: Setup Gradle
+        run: |
+          cd android-app
+          gradle wrapper --gradle-version 8.11.1
+
+      - name: Build APK
+        run: |
+          cd android-app
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyAPKBuilder-debug-apk
+          path: android-app/app/build/outputs/apk/debug/app-debug.apk
